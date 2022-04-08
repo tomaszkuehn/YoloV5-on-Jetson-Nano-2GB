@@ -1,6 +1,6 @@
 # IP camera image capture (player) OpenCV - all in memory
 # Apache 2.0 license
-# Copyright (C) 2022 Tomasz Kuehn v0.1
+# Copyright (C) 2022 Tomasz Kuehn v0.2
 
 import cv2
 import torch
@@ -9,6 +9,13 @@ import time
 import requests
 from requests.auth import HTTPBasicAuth
 import numpy as np
+from threading import Thread
+
+
+def thread_image():
+    global r
+    #r = requests.get("http://192.168.0.250/cgi-bin/jpg/image.cgi", stream = False, auth = HTTPBasicAuth("Admin", "1234"))
+    r = requests.get("http://192.168.88.182:8080/shot.jpg", stream = True)   
 
 
 # Model
@@ -24,25 +31,37 @@ model.amp = False  # Automatic Mixed Precision (AMP) inference
 
 #model.cuda()
 fpsstart = 0
+color = (255, 155, 155)
+
+t = Thread(target = thread_image)
+t.start()
 while 1:
-    r = requests.get("http://192.168.0.250/cgi-bin/jpg/image.cgi", stream = False, auth = HTTPBasicAuth("Admin", "1234"))
-    #r = requests.get("http://192.168.88.209:8080/shot.jpg", stream = False)
+    tt = time.time()
+    t.join()
     image = cv2.imdecode(np.frombuffer(r.content, dtype=np.uint8), cv2.IMREAD_ANYCOLOR)
+    t = Thread(target = thread_image)
+    t.start()
+    #points = (960, 540)
+    #image = cv2.resize(image, points, interpolation= cv2.INTER_LINEAR)
+    diff = time.time() - tt
+    print("[INFO] IMAGE took {:.6f} seconds".format(diff))
     tt = time.time()
     # Inference
     results = model(image, size=640)  # includes NMS
     diff = time.time() - tt
     print("[INFO] YOLO took {:.6f} seconds".format(diff))
+    tt = time.time()
     # Results
     #results.print()  
     results.render() #render boxes around objects
     diff = time.time() - fpsstart
     fpsstart = time.time()
     fps = 1.0 / diff
-    color = (255, 200, 255)
     cv2.putText(results.imgs[0], 'FPS ' + '%.2f' % fps, (20, 20), cv2.FONT_HERSHEY_PLAIN, 1.0, color, 2)
     cv2.imshow("Image", results.imgs[0])
     cv2.waitKey(1)
+    diff = time.time() - tt
+    print("[INFO] DISP took {:.6f} seconds".format(diff))
 
 #results.xyxy[0]  # im1 predictions (tensor)
 #results.pandas().xyxy[0]  # im1 predictions (pandas)
