@@ -16,11 +16,11 @@ def thread_image():
     global r
     #r = requests.get("http://192.168.0.250/cgi-bin/jpg/image.cgi", stream = False, auth = HTTPBasicAuth("Admin", "1234"))
     #r = requests.get("http://192.168.88.209:8080/shot.jpg", stream = False) 
-    r = requests.get("http://192.168.88.182:8080/shot.jpg", stream = False) 
+    r = requests.get("http://192.168.88.176:8080/shot.jpg", stream = False) 
 
 
 # Model
-model = torch.hub.load('ultralytics/yolov5', 'yolov5s', pretrained = 'True', device='0') #device 0 is Jetson cuda device
+model = torch.hub.load('ultralytics/yolov5', 'yolov5l', pretrained = 'True', device='0') #device 0 is Jetson cuda device
 
 model.conf = 0.25  # NMS confidence threshold
 model.iou = 0.45  # NMS IoU threshold
@@ -66,7 +66,8 @@ while 1:
         fps = 1.0 / diff
         #print("FPS: %.2f" % fps)
         
-        cv2.putText(results.imgs[0], 'FPS ' + '%.2f' % fps, (20, 20), cv2.FONT_HERSHEY_PLAIN, 1.5, color, 2)
+        cv2.putText(results.imgs[0], 'FPS ' + '%.2f' % fps, (20, 20), cv2.FONT_HERSHEY_PLAIN, 1.5, color, 3) #cv2.LINE_AA
+        cv2.putText(results.imgs[0], 'FPS ' + '%.2f' % fps, (20, 20), cv2.FONT_HERSHEY_PLAIN, 1.5, (0,0,0), 2)
         cv2.imshow("Image", results.imgs[0])
         cv2.waitKey(1)
     except:
